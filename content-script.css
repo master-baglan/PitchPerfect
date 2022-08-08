@@ -30,3 +30,9 @@
   width: 50%;
   margin-top: 10px;
 }
+#newSpan2 {
+  font-size: 20px;
+  font-weight: bold;
+  color: red;
+  width: 50%;
+}

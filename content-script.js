@@ -2,23 +2,30 @@ console.log("hello from content script");
 
 let isListening = false;
 let newSpan = document.createElement("newSpan");
+let newSpan2 = document.createElement("newSpan");
 let speak = document.createElement("newSpan");
 let speakInterim = document.createElement("newSpan");
 speak.id = "speak-text";
 speakInterim.id = "speak-text2";
 newSpan.id = "newSpan";
+newSpan2.id = "newSpan2";
 let allText = [];
 let displayText = [];
+let displayTextPart1 = [];
+let displayTextPart2 = [];
 let fromWord = 0;
-let wordsToShow = 30;
+let wordsToShow = 30; //should be only even number
+let half = wordsToShow / 2;
 
 chrome.storage.local.get(["text"], function (result) {
   console.log(result.text);
   allText = result.text;
-  isListening = result.isListening;
   displayText = allText.slice(fromWord, fromWord + wordsToShow);
+  displayTextPart1 = displayText.slice(0, half);
+  displayTextPart2 = displayText.slice(half);
   console.log(displayText);
-  newSpan.textContent = displayText.toString().replaceAll(",", " ");
+  newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
+  newSpan2.textContent = displayTextPart1.toString().replaceAll(",", " ");
 });
 chrome.storage.onChanged.addListener((changes, area) => {
   console.log("Change in storage area: " + area);
@@ -32,8 +39,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (item === "text") {
       allText = changes[item].newValue;
       displayText = allText.slice(fromWord, fromWord + wordsToShow);
+      displayTextPart1 = displayText.slice(0, half);
+      displayTextPart2 = displayText.slice(half);
       console.log(displayText);
-      newSpan.textContent = displayText.toString().replaceAll(",", " ");
+      newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
+      newSpan2.textContent = displayTextPart1.toString().replaceAll(",", " ");
     }
   }
 });
@@ -41,14 +51,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
 let elemDiv = document.createElement("div");
 let speakDiv = document.createElement("div");
 let recBtn = document.createElement("button");
+let br = document.createElement("br");
 recBtn.textContent = "REC";
 elemDiv.className = "banner";
 elemDiv.appendChild(newSpan);
+elemDiv.appendChild(newSpan2);
 speakDiv.appendChild(speak);
 speakDiv.appendChild(speakInterim);
 elemDiv.appendChild(speakDiv);
 elemDiv.appendChild(recBtn);
-
 window.document.body.insertBefore(elemDiv, document.body.firstChild);
 //speech recognition
 if ("webkitSpeechRecognition" in window) {
@@ -98,10 +109,6 @@ if ("webkitSpeechRecognition" in window) {
   };
 
   function moveText(text) {
-    if (text.includes("next")) {
-      console.log("next word triggerd");
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" }));
-    }
     let textArr = getWords(text);
     let start = 0;
 
@@ -111,10 +118,15 @@ if ("webkitSpeechRecognition" in window) {
         start = index;
       }
     });
-    fromWord = fromWord + start;
-    displayText = allText.slice(fromWord, fromWord + wordsToShow);
-    console.log(displayText);
-    newSpan.textContent = displayText.toString().replaceAll(",", " ");
+    if (start >= half) {
+      fromWord = fromWord + half;
+      displayText = allText.slice(fromWord, fromWord + wordsToShow);
+      displayTextPart1 = displayText.slice(0, half);
+      displayTextPart2 = displayText.slice(half);
+      console.log(displayText);
+      newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
+      newSpan2.textContent = displayTextPart1.toString().replaceAll(",", " ");
+    }
   }
 
   //converts text to array of words
