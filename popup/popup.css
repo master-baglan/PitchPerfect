@@ -1,3 +1,10 @@
-body {
-  width: 700px;
+h1 {
+  align-self: center;
+  color: rgb(179, 179, 67);
+  font-size: xx-large;
+}
+.main {
+  background-color: aquamarine;
+  display: flex;
+  flex-direction: column;
 }

@@ -1,85 +1,95 @@
 console.log("hello from content script");
-
-let isListening = false;
-let newSpan = document.createElement("newSpan");
-let newSpan2 = document.createElement("newSpan");
-let speak = document.createElement("newSpan");
-let speakInterim = document.createElement("newSpan");
-speak.id = "speak-text";
-speakInterim.id = "speak-text2";
-newSpan.id = "newSpan";
-newSpan2.id = "newSpan2";
-let allText = [];
-let displayText = [];
-let displayTextPart1 = [];
-let displayTextPart2 = [];
-let fromWord = 0;
-let wordsToShow = 30; //should be only even number
-let half = wordsToShow / 2;
-
-chrome.storage.local.get(["text"], function (result) {
-  console.log(result.text);
-  allText = result.text;
-  displayText = allText.slice(fromWord, fromWord + wordsToShow);
-  displayTextPart1 = displayText.slice(0, half);
-  displayTextPart2 = displayText.slice(half);
-  console.log(displayText);
-  newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
-  newSpan2.textContent = displayTextPart1.toString().replaceAll(",", " ");
-});
-chrome.storage.onChanged.addListener((changes, area) => {
-  console.log("Change in storage area: " + area);
-  let changedItems = Object.keys(changes);
-  for (let item of changedItems) {
-    console.log(item + " has changed:");
-    console.log("Old value: ");
-    console.log(changes[item].oldValue);
-    console.log("New value: ");
-    console.log(changes[item].newValue);
-    if (item === "text") {
-      allText = changes[item].newValue;
-      displayText = allText.slice(fromWord, fromWord + wordsToShow);
-      displayTextPart1 = displayText.slice(0, half);
-      displayTextPart2 = displayText.slice(half);
-      console.log(displayText);
-      newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
-      newSpan2.textContent = displayTextPart1.toString().replaceAll(",", " ");
-    }
-  }
-});
-
-let elemDiv = document.createElement("div");
-let speakDiv = document.createElement("div");
-let recBtn = document.createElement("button");
-let br = document.createElement("br");
-recBtn.textContent = "REC";
-elemDiv.className = "banner";
-elemDiv.appendChild(newSpan);
-elemDiv.appendChild(newSpan2);
-speakDiv.appendChild(speak);
-speakDiv.appendChild(speakInterim);
-elemDiv.appendChild(speakDiv);
-elemDiv.appendChild(recBtn);
-window.document.body.insertBefore(elemDiv, document.body.firstChild);
-//speech recognition
 if ("webkitSpeechRecognition" in window) {
   console.log("hello from webkit speech recognition");
   let baglan = new webkitSpeechRecognition();
   baglan.continuous = true;
   baglan.interimResults = true;
+  let lang = "";
 
-  baglan.lang = "en-US";
+  let isListening = false;
+  let newSpan = document.createElement("newSpan");
+  let newSpan2 = document.createElement("newSpan");
+  let speak = document.createElement("newSpan");
+  let speakInterim = document.createElement("newSpan");
 
-  recBtn.addEventListener("click", () => {
+  speak.id = "speak-text";
+  speakInterim.id = "speak-text2";
+  newSpan.id = "newSpan";
+  newSpan2.id = "newSpan2";
+  let allText = [];
+  let displayText = [];
+  let displayTextPart1 = [];
+  let displayTextPart2 = [];
+  let fromWord = 0;
+  let wordsToShow = 36; //should be only even number
+  let half = wordsToShow / 2;
+
+  chrome.storage.local.get(["text", "lang"], function (result) {
+    console.log(result.text);
+    allText = result.text;
+    displayText = allText.slice(fromWord, fromWord + wordsToShow);
+    displayTextPart1 = displayText.slice(0, half);
+    displayTextPart2 = displayText.slice(-half);
+    console.log(displayText);
+    lang = result.lang;
+    baglan.lang = lang;
+    console.log(lang);
+    newSpan.textContent = "Press to start speech...";
+    newSpan2.textContent = "";
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    console.log("Change in storage area: " + area);
+    let changedItems = Object.keys(changes);
+    for (let item of changedItems) {
+      console.log(item + " has changed:");
+      console.log("Old value: ");
+      console.log(changes[item].oldValue);
+      console.log("New value: ");
+      console.log(changes[item].newValue);
+      if (item === "text") {
+        allText = changes[item].newValue;
+        displayText = allText.slice(fromWord, fromWord + wordsToShow);
+        displayTextPart1 = displayText.slice(0, half);
+        displayTextPart2 = displayText.slice(-half);
+        console.log(displayText);
+        newSpan.textContent = "Press to start speech...";
+        newSpan2.textContent = "";
+      }
+      if (item === "lang") {
+        lang = changes[item].newValue;
+        console.log(lang);
+        baglan.lang = lang;
+      }
+    }
+  });
+
+  let elemDiv = document.createElement("div");
+  let speakDiv = document.createElement("div");
+
+  let br = document.createElement("br");
+  elemDiv.className = "banner";
+  elemDiv.appendChild(newSpan);
+  elemDiv.appendChild(newSpan2);
+  speakDiv.appendChild(speak);
+  speakDiv.appendChild(speakInterim);
+  elemDiv.appendChild(speakDiv);
+
+  window.document.body.insertBefore(elemDiv, document.body.firstChild);
+  //speech recognition
+
+  elemDiv.addEventListener("click", () => {
+    isListening = !isListening;
     if (isListening) {
-      recBtn.textContent = "PAUSE";
       baglan.start();
+      newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
+      newSpan2.textContent = displayTextPart2.toString().replaceAll(",", " ");
     } else {
-      recBtn.textContent = "REC";
       baglan.stop();
       console.log("rec is stopped");
+      newSpan.textContent = "Press to start speech...";
+      newSpan2.textContent = "";
     }
-    isListening = !isListening;
   });
 
   baglan.onstart = () => {
@@ -118,21 +128,34 @@ if ("webkitSpeechRecognition" in window) {
         start = index;
       }
     });
-    if (start >= half) {
+
+    if (start >= half - 1) {
       fromWord = fromWord + half;
       displayText = allText.slice(fromWord, fromWord + wordsToShow);
       displayTextPart1 = displayText.slice(0, half);
-      displayTextPart2 = displayText.slice(half);
+      displayTextPart2 = displayText.slice(-half);
       console.log(displayText);
       newSpan.textContent = displayTextPart1.toString().replaceAll(",", " ");
-      newSpan2.textContent = displayTextPart1.toString().replaceAll(",", " ");
+      newSpan2.textContent = displayTextPart2.toString().replaceAll(",", " ");
     }
   }
 
   //converts text to array of words
   function getWords(text) {
-    let x = text.replace(/[^A-Za-z0-9]+/g, " ");
-    let words = x.trim().toLowerCase().split(" ");
+    if (lang === "en-US") {
+      let x = text.replace(/[^A-Za-z0-9]+/g, " ");
+      let words = x.trim().toLowerCase().split(" ");
+      return words;
+    } else if (lang === "ru-RU") {
+      let x = text.replace(/[^А-Яа-я0-9]+/g, " ");
+      let words = x.trim().split(" ");
+      return words;
+    } else {
+      let x = text;
+      let words = x.trim().split(" ");
+      return words;
+    }
+
     return words;
   }
 } else {

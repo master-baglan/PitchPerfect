@@ -1,14 +1,26 @@
 <!DOCTYPE html>
+<meta charset="utf-8">
 <head>
 <title>Pitch Perfect</title>
 <link rel = "stylesheet" href="popup.css"/>
 </head>
 <body>
-    <h1> Pitch Perfect </h1>
-    <p> Paste or write down your speech </p>
-    <textarea id = "inputText" rows="15" cols="44" placeholder="Enter your text here"></textarea>
+    <div class="main">
+        <h1> Pitch Perfect </h1>
+    <div>
+        <p> Paste or write down your speech </p>
+        <select name ="language" id = "lang">
+            <option value="en-US">English</option>
+            <option value="ru-RU">Pусский</option>
+            <option value="tr-TR">Türkçe</option>
+        </select>
+    </div>
+ 
+    <textarea id = "inputText" rows="15" cols="60" placeholder="Enter your text here"></textarea>
     <button id = "saveButton">SAVE</button>
     <textarea id = "displayText" rows = "4" cols = "44"></textarea>
+    </div>
+    
 
 
 </body>

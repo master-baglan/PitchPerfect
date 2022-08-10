@@ -23,6 +23,7 @@
     {
       "matches": [
         "*://*.meet.google.com/*",
+        "*://*.us04web.zoom.us/wc/*",
         "*://*.docs.google.com/presentation*"
       ],
       "js": ["content-script.js"],
